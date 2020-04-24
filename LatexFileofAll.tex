@@ -1,1 +1,97 @@
+\documentclass{article}
+\usepackage{mathtools}
+\usepackage{geometry}
+\usepackage{environ}
+\usepackage{tikz}
+\usepackage{titlesec}
 
+\geometry{letterpaper,left=1.5cm,right=1.5cm,top=1.5cm,bottom=1.5cm}
+\NewEnviron{elaboration}{
+\par
+\begin{tikzpicture}
+\node[rectangle,minimum width=0.9\textwidth] (m) {\begin{minipage}{0.85\textwidth}\BODY\end{minipage}};
+\draw[dashed] (m.south west) rectangle (m.north east);
+\end{tikzpicture}
+}
+\newpagestyle{main}{
+    \setfoot{CS229 by Prof. Ng}{Zhuoer Wang}{\thepage}
+}
+\pagestyle{main}
+
+\begin{document}
+
+% ----------------------------------------------------------------------------------------
+\noindent\begin{math}x^{(i)}\end{math} - input \textbf{features}, \begin{math}y^{(i)}\end{math} - output \textbf{target}, \begin{math}(x^{(i)}, y^{(i)})\end{math} - \textbf{training example}, \begin{math}{(x^{(i)}, y{(i)}); i = 1,...,m}\end{math} - \textbf{training set}\\
+h - \textbf{hypothesis}\\
+target variable is continuous - \textbf{regression}, discrete - \textbf{classification}
+
+% ----------------------------------------------------------------------------------------
+\section{Linear Regression}
+\centerline{\begin{math}h_\theta(x) = \theta_0 + \theta_1x_1 + \theta_2x_2 = \sum^n_{i=0}\theta_ix_i = \theta^Tx\end{math}}\\
+$\theta_i$ - \textbf{parameters(weights)}, x and $\theta$ are both vectors\\
+$\Rightarrow$ to pick, or learn \begin{math}\theta\end{math}: make \begin{math}h(x)\end{math} close to y $\Rightarrow$ define a function that measures the difference $\Rightarrow$ \textbf{Cost Function}\\
+$$J(\theta) = \frac{1}{2}\sum^m_{i=1}(h_\theta(x^{(i)}) - y^{(i)})^2 \text{   \textit{($\frac{1}{2}$ is for convenience only)}}$$\\
+Goal: use algorithms to minimize $J(\theta)$
+% ----------------------------------------------------------------------------------------
+\subsection{LMS algorithm}
+\begin{elaboration}* For multivariate function: $\partial$ - partial differential, $\frac{\partial f}{\partial x}$, y is fixed variate with derivative of x;\\
+\indent d - complete differential, $d = \frac{\partial f}{\partial x}dx + \frac{\partial f}{\partial y}dy$\\
+For univariate function, there's no difference between $\partial$ and d
+\end{elaboration}\\
+Start with "initial guess" for $\theta$, then repeatedly change $\theta$ - \textbf{gradient descent}\\
+$\theta$ update rule: $\theta_j:=\theta_j - \alpha \frac{\partial}{\partial \theta_j}J(\theta)$.\\
+Here, $-\frac{\partial}{\partial \theta_j}J(\theta)$ is the negative direction of slope of $J(\theta)$, which is the fastest way to get to the minimum value. $\alpha$ is \textbf{learning rate}, an $\alpha$ that is too large will miss the minimum value, an $\alpha$ that is too small will increase training time.\\
+\begin{equation}\nonumber
+   \begin{aligned}
+       \frac{\partial}{\partial \theta_j}J(\theta) &= \frac{\partial}{\partial \theta_j}[\frac{1}{2}(h_\theta(x) - y)^2] \text{  \textit{(one training example - neglect sum)}}\\
+         &=2\cdot\frac{1}{2}(h_\theta(x) - y)\cdot\frac{\partial}{\partial \theta_j}(h_\theta(x) - y)\text{  \textit{(chain rule)}}\\
+         &=(h_\theta(x) - y)\cdot\frac{\partial}{\partial \theta_j}(\sum^n_{i=0}\theta_ix_i - y)\text{  \textit{(formula of $h_\theta(x)$ above)}}\\
+         &=(h_\theta(x) - y)x_j\\
+   \end{aligned} 
+\end{equation}
+$\Rightarrow$ \textbf{Least Mean Squares update rule (or Widrow-Hoff learning rule)}: $\theta_j:=\theta_j + \alpha(y^{(i)} - h_\theta(x^{(i)}))x_j^{(i)}$\\
+
+\noindent For more than one training example:\\
+\indent \textbf{batch gradient descent:} Repeat until convergence $\rightarrow$ $\theta_j:=\theta_j + \alpha\sum^n_{i=0}(y^{(i)} - h_\theta(x^{(i)}))x_j^{(i)}$ (for every j)\\
+\indent \textbf{stochastic gradient descent (incremental
+gradient descent):} loop for i = 1 to m $\rightarrow \theta_j:=\theta_j + \alpha(y^{(i)} - h_\theta(x^{(i)}))x_j^{(i)}$\\
+$\triangle$ Often, stochastic gradient descent gets $\theta$ “close” to the minimum much faster than batch gradient descent
+
+% ----------------------------------------------------------------------------------------
+\subsection{The normal equations}
+\noindent This is for computing $\theta$ for Multivariate Linear Regression, the problem is also called OLS Regression
+\begin{elaboration}
+$\nabla_Af(A)$ - derivative of $f$ with respect to A\\
+$trA = \sum^n_{i=1}A_{ii}$ - trace of A = sum of diagonal entries
+\end{elaboration}\\
+$$X = \left[\begin{matrix}
+x_{11} & ... & x_{1n}\\
+x_{m1} & ... & x_{mn}
+\end{matrix}\right], y = \left[\begin{matrix} y_1 \\ ... \\ y_m\end{matrix}\right]$$
+\noindent Rewrite J in matrix-vectorial notation:\\
+\noindent Let both training set X and target value y be m-dimensional vectors $\Rightarrow X\theta - \vec y = h_\theta(x^{(i)}) - y^{(i)}$ (errors/residuals)\\
+Thus, $J(\theta) = \frac{1}{2}(X\theta - \vec y)^T(X\theta - \vec y)$ ($\frac{1}{2}$ is for convenience only)\\
+Because $\nabla_{A^T}f(A) = (\nabla_Af(A))^T$ and $\nabla_AtrABA^TC = CAB + C^TAB^T$, we find  $\nabla_{A^T}trABA^TC = B^TA^TC^T + BA^TC$ (1)\\
+Also, $\nabla_AtrAB = B^T$ (2)
+\begin{equation}\nonumber
+    \begin{aligned}
+        \nabla_\theta J(\theta) &= \nabla_\theta\frac{1}{2}(X\theta - \vec y)^T(X\theta - \vec y)\\
+        &= \frac{1}{2}\nabla_\theta (\theta^TX^TX\theta - \theta^TX^T\vec y - \vec y^TX\theta + \vec y^T\vec y)\\
+        &= \frac{1}{2}\nabla_\theta tr(\theta^TX^TX\theta - \theta^TX^T\vec y - \vec y^TX\theta + \vec y^T\vec y) \rightarrow \textit{(the trace of a real number is just the real number)}\\
+        &= \frac{1}{2}\nabla_\theta (tr\theta^TX^TX\theta - 2tr \vec y^TX\theta) \rightarrow \textit{($trA = trA^T$, $\vec y^T\vec y$ does not contain $\theta$)}\\
+        &= \frac{1}{2}(X^TX\theta + X^TX\theta - 2X^T\vec y) \rightarrow \textit{(use the equations (1)(2) above, $A^T$ is $\theta$, $B = B^T = X^TX$, C is I)}\\
+        &= X^TX\theta - X^T\vec y \rightarrow \textit{(\textbf{normal equation:}When J is minimized (derivatives = zero), $X^TX\theta = X^T\vec y$)}
+\end{aligned}
+\end{equation}
+$\Rightarrow$ $\theta = (X^TX)^{-1}X^T\vec y$\\
+\noindent Pros: No need to choose learning rate $\alpha$ or iterate\\
+\noindent Cons: Slow if n is large, could get problem if $X^TX$ is not invertible
+
+% ----------------------------------------------------------------------------------------
+\subsection{Probabilistic interpretation}
+Assume that $y^{(i)} = \theta^Tx^{(i)} + \epsilon^{(i)}$, where $y^{(i)}$ is the target variable, $x^{(i)}$ is inputs, $\theta^Tx^{(i)}$ is the predicted value, and $\epsilon^{(i)}$ is an error term.
+
+
+
+
+\end{document}
